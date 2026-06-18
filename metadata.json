@@ -1,0 +1,6 @@
+{
+  "name": "Study Teacher AI",
+  "description": "Your Personal AI Teacher Available 24/7. Ask questions and receive instant explanations.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

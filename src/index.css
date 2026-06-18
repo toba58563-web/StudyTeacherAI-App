@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary-400: #60A5FA;
+  --color-primary-500: #2563EB;
+  --color-primary-600: #1D4ED8;
+  --color-secondary-500: #14B8A6;
+  --color-secondary-600: #0D9488;
+  --color-accent-500: #F59E0B;
+  --color-success-500: #10B981;
+  --color-danger-500: #EF4444;
+
+  --color-bg-light: #FFFFFF;
+  --color-bg-dark: #0F172A;
+  
+  --color-text-light: #111827;
+  --color-text-dark: #F8FAFC;
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-slate-50;
+  }
+}
+
+.markdown-body {
+  @apply space-y-4;
+}
+.markdown-body p {
+  @apply leading-relaxed;
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+  @apply font-semibold mt-6 mb-4 leading-tight;
+}
+.markdown-body h1 { @apply text-2xl; }
+.markdown-body h2 { @apply text-xl; }
+.markdown-body h3 { @apply text-lg; }
+.markdown-body ul { @apply list-disc list-inside space-y-1 my-4; }
+.markdown-body ol { @apply list-decimal list-inside space-y-1 my-4; }
+.markdown-body blockquote { @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 py-1 italic text-gray-600 dark:text-gray-400; }
+.markdown-body code { @apply bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm font-mono text-primary-600 dark:text-primary-400; }
+.markdown-body pre { @apply bg-gray-100 dark:bg-slate-800 p-4 rounded-xl overflow-x-auto my-4 text-sm font-mono; }
+.markdown-body pre code { @apply bg-transparent p-0 text-gray-800 dark:text-gray-200; }
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}

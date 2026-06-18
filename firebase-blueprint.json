@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "User": {
+       "title": "User",
+       "description": "User profile with basic settings",
+       "type": "object",
+       "properties": {
+          "displayName": { "type": "string" },
+          "xp": { "type": "number" },
+          "level": { "type": "number" }
+       }
+    },
+    "Progress": {
+       "title": "Progress",
+       "description": "User learning progress",
+       "type": "object",
+       "properties": {
+          "questionsAsked": { "type": "number" },
+          "streak": { "type": "number" }
+       }
+    },
+    "Chat": {
+       "title": "Chat",
+       "description": "A conversation with AI",
+       "type": "object",
+       "properties": {
+           "userId": { "type": "string" },
+           "subject": { "type": "string" },
+           "createdAt": { "type": "string" }
+       }
+    },
+    "Flashcard": {
+       "title": "Flashcard",
+       "description": "Memorization card",
+       "type": "object",
+       "properties": {
+           "userId": { "type": "string" },
+           "front": { "type": "string" },
+           "back": { "type": "string" }
+       }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+       "schema": "User",
+       "description": "User data"
+    },
+    "users/{userId}/progress/{progressId}": {
+       "schema": "Progress",
+       "description": "Progress tracking separated to prevent top-level bloat"
+    },
+    "chats/{chatId}": {
+       "schema": "Chat",
+       "description": "Chat conversations"
+    },
+    "flashcards/{cardId}": {
+       "schema": "Flashcard",
+       "description": "Flashcard items"
+    }
+  }
+}
