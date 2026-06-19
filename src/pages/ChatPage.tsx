@@ -104,14 +104,30 @@ export default function ChatPage() {
     };
   }, []);
 
-  const toggleListen = () => {
+  const toggleListen = async () => {
      if (isListening) {
          recognitionRef.current?.stop();
          setIsListening(false);
      } else {
-         setInput("");
-         recognitionRef.current?.start();
-         setIsListening(true);
+         if (!recognitionRef.current) {
+             alert("Speech recognition is not supported in your browser.");
+             return;
+         }
+         try {
+             // Explicitly request microphone access to trigger the browser prompt, especially in iframes
+             await navigator.mediaDevices.getUserMedia({ audio: true });
+         } catch (err) {
+             console.error("Microphone permission error:", err);
+             alert("Please allow microphone access to use voice dictation.");
+             return;
+         }
+         try {
+             setInput("");
+             recognitionRef.current.start();
+             setIsListening(true);
+         } catch (err) {
+             console.error("Speech recognition start error:", err);
+         }
      }
   };
 

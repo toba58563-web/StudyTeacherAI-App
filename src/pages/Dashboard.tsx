@@ -39,6 +39,9 @@ import {
   collection,
   getDocs,
   setDoc,
+  query,
+  orderBy,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { incrementUserProgress } from "../lib/progress";
@@ -49,11 +52,21 @@ interface StudyGoal {
   completed: boolean;
 }
 
+interface ChatSession {
+  id: string;
+  subjectId: string;
+  startedAt: Timestamp;
+  lastMessageAt: Timestamp;
+  messages?: any[];
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [studyGoals, setStudyGoals] = useState<StudyGoal[]>([]);
   const [newGoalText, setNewGoalText] = useState("");
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const [chatFilter, setChatFilter] = useState<string>("All");
 
   useEffect(() => {
     if (!user) return;
@@ -68,6 +81,22 @@ export default function Dashboard() {
         console.error("Error listening to user profile:", error);
       },
     );
+    return () => unsub();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, "users", user.uid, "chats"),
+      orderBy("lastMessageAt", "desc")
+    );
+    const unsub = onSnapshot(q, (snapshot) => {
+      const history: ChatSession[] = [];
+      snapshot.forEach((docSnap) => {
+        history.push({ id: docSnap.id, ...docSnap.data() } as ChatSession);
+      });
+      setChatHistory(history);
+    });
     return () => unsub();
   }, [user]);
 
@@ -249,6 +278,13 @@ export default function Dashboard() {
     { week: "W3", score: 0 },
     { week: "W4", score: 0 },
   ];
+
+  const filteredChats =
+    chatFilter === "All"
+      ? chatHistory
+      : chatHistory.filter(
+          (c) => c.subjectId.toLowerCase() === chatFilter.toLowerCase()
+        );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
@@ -561,7 +597,7 @@ export default function Dashboard() {
       </div>
 
       {/* Subject Explorer */}
-      <div>
+      <div className="mb-12">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
           Subject Explorer
         </h2>
@@ -582,6 +618,99 @@ export default function Dashboard() {
               </h3>
             </Link>
           ))}
+        </div>
+      </div>
+
+      {/* Recent Chats */}
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Recent Chats
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setChatFilter("All")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                chatFilter === "All"
+                  ? "bg-primary-500 text-white"
+                  : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              All
+            </button>
+            {subjects.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setChatFilter(s.name)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  chatFilter === s.name
+                    ? "bg-primary-500 text-white"
+                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm">
+          {filteredChats.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageSquare className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">
+                No chats found for this category.
+              </p>
+              <Link
+                to="/chat"
+                className="inline-block mt-4 px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-full transition-colors"
+              >
+                Start a New Chat
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredChats.map((chat) => {
+                const subject =
+                  subjects.find(
+                    (s) =>
+                      s.id.toLowerCase() === chat.subjectId.toLowerCase() ||
+                      s.name.toLowerCase() === chat.subjectId.toLowerCase()
+                  ) || { name: chat.subjectId || "General", color: "bg-gray-500", icon: MessageSquare };
+                return (
+                  <Link
+                    key={chat.id}
+                    to={chat.subjectId !== "General" ? `/chat/${chat.subjectId}` : "/chat"}
+                    className="flex items-center p-4 border border-gray-100 dark:border-slate-700 rounded-2xl hover:border-primary-500 transition-colors group"
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-full ${subject.color} flex items-center justify-center text-white shrink-0`}
+                    >
+                      <subject.icon className="w-5 h-5" />
+                    </div>
+                    <div className="ml-4 flex-1 truncate">
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white capitalize">
+                        {subject.name} Chat
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                        {chat.messages && chat.messages.length > 0
+                          ? chat.messages[chat.messages.length - 1].content
+                          : "No messages yet."}
+                      </p>
+                    </div>
+                    <div className="ml-4 flex items-center space-x-1 text-xs text-gray-400">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>
+                        {chat.lastMessageAt?.toDate
+                          ? chat.lastMessageAt.toDate().toLocaleDateString()
+                          : "Just now"}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
