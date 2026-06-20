@@ -31,6 +31,8 @@ export default function AuthPage() {
         });
       }
       
+      localStorage.setItem("studentToken", "true");
+      localStorage.removeItem("adminToken");
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "An error occurred with Google Sign-In");
@@ -54,6 +56,8 @@ export default function AuthPage() {
           level: 1
         });
       }
+      localStorage.setItem("studentToken", "true");
+      localStorage.removeItem("adminToken");
       navigate("/dashboard");
     } catch (err: any) {
       if (err.code === 'auth/operation-not-allowed') {

@@ -143,7 +143,13 @@ export default function AdminPage() {
 
   useEffect(() => {
     let unsubscribeUsers: () => void;
-    if (user && user.email === adminEmail) {
+    // Redirect if it's already a logged in student wandering here
+    if (user && user.email !== adminEmail) {
+      window.location.href = "/dashboard";
+      return;
+    }
+
+    if (user && user.email === adminEmail && localStorage.getItem("adminToken") === "true") {
       setIsAdmin(true);
       fetchAdminData();
       
@@ -218,6 +224,8 @@ export default function AdminPage() {
     setLoginError("");
     try {
       await signInWithEmailAndPassword(auth, adminEmail, password);
+      localStorage.setItem("adminToken", "true");
+      localStorage.removeItem("studentToken");
     } catch (err: any) {
       if (
         err.code === "auth/user-not-found" ||
@@ -225,6 +233,8 @@ export default function AdminPage() {
       ) {
         try {
           await createUserWithEmailAndPassword(auth, adminEmail, password);
+          localStorage.setItem("adminToken", "true");
+          localStorage.removeItem("studentToken");
         } catch (createErr: any) {
           setLoginError(createErr.message);
         }
@@ -235,6 +245,7 @@ export default function AdminPage() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("adminToken");
     signOut(auth);
   };
 

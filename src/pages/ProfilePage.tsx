@@ -43,6 +43,7 @@ export default function ProfilePage() {
   };
 
   const handleLogout = async () => {
+    localStorage.removeItem("studentToken");
     await signOut(auth);
     navigate("/");
   };

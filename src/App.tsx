@@ -25,7 +25,7 @@ import { Bell, X } from "lucide-react";
 
 function MainAppLayout() {
   const { user } = useAuth();
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!user && localStorage.getItem("studentToken") === "true";
   const [broadcast, setBroadcast] = useState<any>(null);
   const [dismissedBroadcast, setDismissedBroadcast] = useState(false);
 
