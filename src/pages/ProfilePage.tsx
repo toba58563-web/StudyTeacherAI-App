@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../components/AuthProvider";
 import { updateProfile, signOut } from "firebase/auth";
-import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot, collection, addDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
-import { User, LogOut, Save, Edit2, Loader2, Award, Book, Flame } from "lucide-react";
+import { User, LogOut, Save, Edit2, Loader2, Award, Book, Flame, MessageSquare, Send, Star } from "lucide-react";
 import { useNavigate } from "react-router";
 
 export default function ProfilePage() {
@@ -13,6 +13,10 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [rating, setRating] = useState(5);
+  const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -40,6 +44,30 @@ export default function ProfilePage() {
       console.error("Error updating profile", error);
     }
     setIsSaving(false);
+  };
+
+  const handleSendFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackText.trim() || !user) return;
+    
+    setFeedbackSending(true);
+    try {
+      await addDoc(collection(db, "user_feedback"), {
+        userId: user.uid,
+        userName: user.displayName || profileData?.displayName || "Student",
+        userEmail: user.email,
+        rating: rating,
+        feedbackText: feedbackText.trim(),
+        timestamp: Timestamp.now(),
+      });
+      setFeedbackText("");
+      setRating(5);
+      setFeedbackSent(true);
+      setTimeout(() => setFeedbackSent(false), 3000);
+    } catch (err) {
+      console.error("Error sending feedback:", err);
+    }
+    setFeedbackSending(false);
   };
 
   const handleLogout = async () => {
@@ -144,6 +172,68 @@ export default function ProfilePage() {
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Questions Asked</p>
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{profileData.questionsAsked || 0}</h3>
         </div>
+      </div>
+
+      {/* Send Feedback Section */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="p-2 bg-primary-100 dark:bg-primary-500/10 text-primary-500 rounded-xl">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Send Feedback</h3>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Have an idea or found a bug? Let us know!</p>
+        
+        <form onSubmit={handleSendFeedback} className="space-y-4">
+          <div className="flex flex-col space-y-2 mb-4">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Rate your experience</span>
+            <div className="flex items-center space-x-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className="focus:outline-none transition-transform hover:scale-110"
+                >
+                  <Star
+                    className={`w-8 h-8 ${
+                      star <= rating
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-gray-300 dark:text-slate-600"
+                    } transition-colors`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+          <textarea
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            placeholder="Type your feedback here..."
+            required
+            rows={4}
+            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow resize-none"
+          />
+          <div className="flex items-center justify-between">
+            {feedbackSent ? (
+               <span className="text-emerald-500 font-medium text-sm animate-in fade-in">Feedback successfully sent! 🎉</span>
+            ) : (
+               <span className="text-transparent">Placeholder</span>
+            )}
+            <button
+              type="submit"
+              disabled={feedbackSending || !feedbackText.trim()}
+              className="bg-primary-600 hover:bg-primary-500 text-white font-medium px-6 py-2.5 rounded-xl transition-colors flex items-center space-x-2 disabled:opacity-50"
+            >
+              {feedbackSending ? (
+                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                 <Send className="w-4 h-4" />
+              )}
+              <span>Submit</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

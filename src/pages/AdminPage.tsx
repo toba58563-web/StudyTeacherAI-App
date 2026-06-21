@@ -40,6 +40,7 @@ import {
   Calendar,
   X,
   Menu,
+  Star,
 } from "lucide-react";
 import {
   BarChart,
@@ -67,12 +68,13 @@ export default function AdminPage() {
 
   // Dashboard State
   const [activeTab, setActiveTab] = useState<
-    "dashboard" | "users" | "analytics" | "content" | "notifications" | "audit"
+    "dashboard" | "users" | "analytics" | "content" | "notifications" | "audit" | "feedback"
   >("dashboard");
   const [usersList, setUsersList] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [flashcards, setFlashcards] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
 
   // Forms & Validations
   const [newGoal, setNewGoal] = useState("");
@@ -108,7 +110,7 @@ export default function AdminPage() {
 
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
-  const adminEmail = "admin@studyteacher.com";
+  const adminEmail = "toba58563@gmail.com";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -201,6 +203,16 @@ export default function AdminPage() {
         aList.push({ id: doc.id, ...doc.data() });
       });
       setAuditLogs(aList);
+
+      // Fetch user feedbacks
+      const feedbackSnap = await getDocs(
+        query(collection(db, "user_feedback"), orderBy("timestamp", "desc"))
+      );
+      const fbList: any[] = [];
+      feedbackSnap.forEach((doc) => {
+        fbList.push({ id: doc.id, ...doc.data() });
+      });
+      setFeedbacks(fbList);
     } catch (err) {
       console.error("Admin fetch error:", err);
     }
@@ -771,6 +783,7 @@ export default function AdminPage() {
               { id: "notifications", label: "Announcements", icon: Bell },
               { id: "analytics", label: "Analytics", icon: Activity },
               { id: "audit", label: "Audit Logs", icon: ShieldCheck },
+              { id: "feedback", label: "Ratings & Feedback", icon: MessageSquare },
             ].map((item) => (
               <button
                 key={item.id}
@@ -1573,6 +1586,76 @@ export default function AdminPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+          {activeTab === "feedback" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center">
+                  <div className="flex items-center space-x-1 mb-2">
+                    <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
+                  </div>
+                  <h3 className="text-3xl font-bold text-white mb-1">
+                    {feedbacks.length > 0
+                      ? (feedbacks.reduce((acc, curr) => acc + (curr.rating || 5), 0) / feedbacks.length).toFixed(1)
+                      : "0.0"}
+                  </h3>
+                  <p className="text-sm text-slate-400">Average Rating</p>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center">
+                  <h3 className="text-3xl font-bold text-white mb-1">{feedbacks.length}</h3>
+                  <p className="text-sm text-slate-400">Total Reviews</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-white">Student Reviews</h3>
+                  <p className="text-sm text-slate-400 mt-1">Review feedback submitted by students</p>
+                </div>
+                
+                <div className="space-y-4">
+                  {feedbacks.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 bg-slate-900/50 rounded-xl border border-dashed border-slate-800">
+                      No feedback submitted yet.
+                    </div>
+                  ) : (
+                    feedbacks.map((item) => (
+                      <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center text-primary-400 font-bold">
+                              {item.userName?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">{item.userName || "Unknown Student"}</p>
+                              <p className="text-xs text-slate-500 mb-1">{item.userEmail || "No Email"}</p>
+                              <div className="flex items-center space-x-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`w-3 h-3 ${
+                                      star <= (item.rating || 5)
+                                        ? "fill-amber-400 text-amber-400"
+                                        : "text-slate-700"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-slate-500 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
+                            {item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString() : "Unknown date"}
+                          </span>
+                        </div>
+                        <p className="text-slate-300 text-sm leading-relaxed bg-slate-900 p-4 rounded-lg border border-slate-800/50">
+                          "{item.feedbackText}"
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           )}
